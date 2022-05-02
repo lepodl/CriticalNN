@@ -1,11 +1,13 @@
-import torch
-import numpy as np
 import os
+import re
+import time
 from multiprocessing.pool import Pool as pool
 from multiprocessing.pool import ThreadPool as Thpool
-import re
+
+import numpy as np
+import torch
 from numba import jit
-import time
+
 
 # random initialize the connections
 
@@ -111,8 +113,8 @@ def generate_block_node_property(E_number=int(8e5),
 
     property = np.zeros([e - s, 22], dtype=np.float32)
     E_thresh = E_number - s if E_number > s else 0
-    property[:E_thresh, 0] = 0.01
-    property[E_thresh:, 0] = 0.01
+    property[:E_thresh, 0] = 0.003
+    property[E_thresh:, 0] = 0.003
 
     property[:, 1] = 0
 

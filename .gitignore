@@ -868,4 +868,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+data/*
+notebook/**.pdf
+notebook/**.eps
+notebook/**.npy
+paper/*
 

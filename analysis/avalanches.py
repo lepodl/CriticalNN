@@ -79,7 +79,7 @@ def compute_avalanche(X: np.array, threshold=None):
     # Duration of inter-avalanche intervals
     iai = [len(intervals) for intervals in iai_]
 
-    return spike_count, avalanche_sizes, avalanche_durations, iai
+    return spike_count, np.array(avalanche_sizes), np.array(avalanche_durations), np.array(iai)
 
 
 def compute_kaapa(X, threshold, no_Bins, min_x, max_x):
@@ -148,7 +148,7 @@ def plot_avalanches(X, threshold):
             transform=ax.transAxes)
     ax.set_xlabel("aval dur")
     ax.set_ylabel("prob")
-    fig.tighe_layout()
+    fig.tight_layout()
     return fig
 
 
@@ -165,9 +165,4 @@ def caculate_DFA(signal, compute_interval, fit_interval, sampling_fre, window_ov
     Returns:
 
     """
-    time_length, num_channel = signal.shape
-    assert (fit_interval[0] >= compute_interval[0]) & (fit_interval[1] <= compute_interval[1]), "CalcInterval should be included in ComputeInterval"
-    assert (compute_interval[0] >= 0.1) & (compute_interval[1] <= 1000), "ComputeInterval should be between 0.1 and 1000 seconds"
-    assert (compute_interval(1) * sampling_fre <= time_length, 'Largest window size should be longer than the signal')
-
     pass

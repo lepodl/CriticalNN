@@ -1,5 +1,6 @@
 import numpy as np
-from scipy.ndimage import uniform_filter1d, gaussian_filter1d
+from scipy.ndimage import uniform_filter1d
+from scipy.signal import welch
 
 # Statistical api
 def mean_firing_rate(spike_train):
@@ -86,3 +87,22 @@ def pearson_cc(spike_train, pairs=20):
 def correlation_coefficent(spike_train):
     ins_rate = instantaneous_rate(spike_train, bin_width=5)
     return np.std(ins_rate) / np.mean(ins_rate)
+
+
+def coefficient_of_variation(spike_train):
+    activate_idx = (spike_train.sum(0) > 5).nonzero()[0]
+    if len(activate_idx) < 10:
+        return np.nan
+    else:
+        cvs = []
+        for i in activate_idx:
+            out = spike_train[:, i].nonzero()[0]
+            fire_interval = out[1:] - out[:-1]
+            cvs.append(fire_interval.std() / fire_interval.mean())
+        return np.array(cvs).mean()
+
+
+def spike_spectrum(spike):
+    ins_fr = instantaneous_rate(spike)
+    freqs, psd = welch(ins_fr, 1.,return_onesided=True, scaling='density')
+    return freqs, psd

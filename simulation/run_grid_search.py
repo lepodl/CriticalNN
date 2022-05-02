@@ -1,26 +1,28 @@
+import argparse
 import os
+
 import numpy as np
 import torch
 from mpi4py import MPI
-import argparse
-from brain_block.random_initialize import connect_for_block
+
 from brain_block.block import block
+from brain_block.random_initialize import connect_for_block
 
 
 def run_simulation(block_path, res_path):
     os.makedirs(res_path, exist_ok=True)
     # \math:
-    #       40 * ampa + 200 * nmda = 1
-    #       2 * gabaA + 50 * gabaB = 1
-    ampa_contribution = np.linspace(0.5, 1, num=50, endpoint=True)
-    gabaA_contribution = np.linspace(0., 0.5, num=50, endpoint=True)
+    #       34 * ampa + 250 * nmda = 1
+    #       2 * gabaA + 36 * gabaB = 1
+    ampa_contribution = np.linspace(0.5, 1, num=100, endpoint=True)
+    gabaA_contribution = np.linspace(0., 0.5, num=100, endpoint=True)
     contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape((-1, 2))
     ampa_contribution = contribution[:, 0]
     gabaA_contribution = contribution[:, 1]
-    ampa = ampa_contribution / 40
-    nmda = (1 - ampa_contribution) / 200
+    ampa = ampa_contribution / 34
+    nmda = (1 - ampa_contribution) / 250
     gabaA = gabaA_contribution / 2
-    gabaB = (1 - gabaA_contribution) / 50
+    gabaB = (1 - gabaA_contribution) / 36
     para =np.stack([ampa, nmda, gabaA, gabaB], axis=1)
     para = para.astype(np.float32)
     total = para.shape[0]
