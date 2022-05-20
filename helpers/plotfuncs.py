@@ -167,8 +167,8 @@ def create_fig(fig, scale, width, n_horz_panels, n_vert_panels,
     # use latex to generate the labels in plots
     # not needed anymore in newer versions
     # using this, font detection fails on adobe illustrator 2010-07-20
-    plt.rcParams['text.usetex'] = True
-    plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+    # plt.rcParams['text.usetex'] = True
+    # plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
 
     plt.rcParams['ps.useafm'] = False   # use of afm fonts, results in small files
     # Output Type 3 (Type3) or Type 42 (TrueType)

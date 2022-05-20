@@ -1,30 +1,7 @@
 % !TEX TS-program = pdflatex
 % !TEX encoding = UTF-8 Unicode
 
-% This file is a template using the "beamer" package to create slides for a talk or presentation
-% - Talk at a conference/colloquium.
-% - Talk length is about 20min.
-% - Style is ornate.
-
-% MODIFIED by Jonathan Kew, 2008-07-06
-% The header comments and encoding in this file were modified for inclusion with TeXworks.
-% The content is otherwise unchanged from the original distributed with the beamer package.
-
 \documentclass{beamer}
-
-
-% Copyright 2004 by Till Tantau <tantau@users.sourceforge.net>.
-%
-% In principle, this file can be redistributed and/or modified under
-% the terms of the GNU Public License, version 2.
-%
-% However, this file is supposed to be a template to be modified
-% for your own needs. For this reason, if you use this file as a
-% template and not specifically distribute it as part of a another
-% package/program, I grant the extra permission to freely copy and
-% modify this file as you see fit and even to delete this copyright
-% notice. 
-
 
 \mode<presentation>
 {
@@ -38,6 +15,7 @@
 
 \usepackage[english]{babel}
 % or whatever
+\usepackage{graphicx}
 
 \usepackage[utf8]{inputenc}
 % or whatever
@@ -55,7 +33,7 @@
 %{Include Only If Paper Has a Subtitle}
 
 \author[Author, Another] % (optional, use only with lots of authors)
-{F.~Author\inst{1} \and S.~Another\inst{2}}
+{Longbin Zeng\inst{1} \and S.~Another\inst{2}}
 % - Give the names in the same order as the appear in the paper.
 % - Use the \inst{?} command only if the authors have different
 %   affiliation.
@@ -142,46 +120,37 @@
 
 \subsection{The Basic Problem That We Studied}
 
-\begin{frame}{Make Titles Informative. Use Uppercase Letters.}{Subtitles are optional.}
+\begin{frame}{Network Dynamics}  % {Subtitles are optional.}
   % - A title should summarize the slide in an understandable fashion
   %   for anyone how does not follow everything on the slide itself.
 
   \begin{itemize}
   \item
-    Use \texttt{itemize} a lot.
+    Network response correspond to specific neuronal parameter, including fire rate, degree of irregularity, spatiotemporal patterns in neuronal spike trains and neuronal critical dynamics.
   \item
-    Use very short sentences or short phrases.
+	Explor the influence of simulation size of neuronal network as well as the community stuctural network. 2000, 5000, 10000, ..., 100 million. 
+  \item 
+  Synapase density and input heterogeneity.(to be confirmed)
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Make Titles Informative.}
 
-  You can create overlays\dots
+
+\begin{frame}{Theoretical explanation}
+
+  Mainly three aspects\ldots
   \begin{itemize}
-  \item using the \texttt{pause} command:
+  \item Explain the mechanism underly the trainsition dynamics.
     \begin{itemize}
+    \item 
+    input current variablity analysis.
     \item
-      First item.
-      \pause
+      Mean-filed equation and hopf bifuraction
     \item    
-      Second item.
+      The real part of fixed point is decreasing.
     \end{itemize}
   \item
-    using overlay specifications:
-    \begin{itemize}
-    \item<3->
-      First item.
-    \item<4->
-      Second item.
-    \end{itemize}
-  \item
-    using the general \texttt{uncover} command:
-    \begin{itemize}
-      \uncover<5->{\item
-        First item.}
-      \uncover<6->{\item
-        Second item.}
-    \end{itemize}
+   fit the network response with a simple f unction.
   \end{itemize}
 \end{frame}
 
@@ -200,10 +169,48 @@
 
 \subsection{Main Results}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{Criticality in large-scale network}
+	Fit to function $ s\cdot tanh(ax+by+c) + t $
+	\begin{itemize}
+		\item in the small blcok, slop is $1.6$
+		\item in the large-scale block, slop is $1.4$
+	\end{itemize}
+\begin{figure}[htbp]
+	\centering
+	\begin{minipage}{0.49\linewidth}
+		\centering
+		\includegraphics[width=0.9\linewidth]{../notebook/small_block_dense_grid_pcc}
+		\caption{size=2k}
+		\label{small_block}
+	\end{minipage}
+	%\qquad
+	\begin{minipage}{0.49\linewidth}
+		\centering
+		\includegraphics[width=0.9\linewidth]{../notebook/100m_block_sparse_point_pcc}
+		\caption{size=100m}
+		\label{big_block}
+	\end{minipage}
+\end{figure}
 \end{frame}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{Criticality in large-scale network}
+	Some simulation case from a fixed parameter of critical space.
+	\begin{figure}[htbp]
+		\centering
+		\begin{minipage}{0.49\linewidth}
+			\centering
+			\includegraphics[width=0.9\linewidth]{fig/from_critical_size_10k}
+			\caption{size=10k}
+			\label{small_block}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.49\linewidth}
+			\centering
+			\includegraphics[width=0.9\linewidth]{fig/from_critical_size_100m}
+			\caption{size=100m}
+			\label{big_block}
+		\end{minipage}
+	\end{figure}
 \end{frame}
 
 \begin{frame}{Make Titles Informative.}

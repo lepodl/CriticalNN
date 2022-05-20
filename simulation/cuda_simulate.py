@@ -54,7 +54,24 @@ def sample_in_voxel_splitEI(aal_region, neurons_per_population_base, num_sample_
 
     return sample_idx.astype(np.int64)
 
-def run_simulation(ip, block_path, write_path):
+
+def run_simulation(ip, block_path, write_path, idx=0):
+    # defaulat critical parameter
+    # 0.0115, 0.0020, 0.2517, 0.0111 subcritical parameter
+    ampa_contribution = np.linspace(0.5, 1, num=100, endpoint=True)
+    gabaA_contribution = np.linspace(0., 0.5, num=100, endpoint=True)
+    contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape((-1, 2))
+    ampa_contribution = contribution[:, 0]
+    gabaA_contribution = contribution[:, 1]
+    ampa = ampa_contribution / 34
+    nmda = (1 - ampa_contribution) / 250
+    gabaA = gabaA_contribution / 2
+    gabaB = (1 - gabaA_contribution) / 36
+    para = np.stack([ampa, nmda, gabaA, gabaB], axis=1)  # (1000, 4)
+    sample_idx = np.arange(5, 100, 10, dtype=np.int8)
+    sample_idx = np.stack(np.meshgrid(sample_idx, sample_idx, indexing="ij"), axis=-1).reshape((-1, 2))
+    a, b = sample_idx[idx]
+    specific_gui = para[a * 100 + b]
     os.makedirs(write_path, exist_ok=True)
     v_th = -50
     aal_region = np.array([0])
@@ -66,11 +83,31 @@ def run_simulation(ip, block_path, write_path):
     neurons_per_population = block_model.neurons_per_subblk.cpu().numpy()
     neurons_per_population_base = np.add.accumulate(neurons_per_population)
     neurons_per_population_base = np.insert(neurons_per_population_base, 0, 0)
+    populations = block_model.subblk_id.cpu().numpy()
+    total_populations = int(block_model.total_subblks)
+
+    # update noise rate
+    population_info = np.stack(np.meshgrid(populations, np.array([0], dtype=np.int64), indexing="ij"),
+                               axis=-1).reshape((-1, 2))
+    population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
+    alpha = torch.ones(total_populations, device="cuda:0") * 0.0003 * 1e8
+    beta = torch.ones(total_populations, device="cuda:0") * 1e8
+    block_model.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
+
+    def _update_gui(gui=(0.0115, 0.0020, 0.2517, 0.0111)):
+        for i, idx in enumerate(np.arange(10, 14)):
+            population_info = np.stack(np.meshgrid(populations, idx, indexing="ij"),
+                                       axis=-1).reshape((-1, 2))
+            population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
+            alpha = torch.ones(total_populations, device="cuda:0") * gui[i] * 1e8
+            beta = torch.ones(total_populations, device="cuda:0") * 1e8
+            block_model.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
+    _update_gui(gui=specific_gui)
 
     sample_idx = load_if_exist(sample_in_voxel_splitEI, os.path.join(write_path, "sample_idx"),
                                aal_region=aal_region,
                                neurons_per_population_base=neurons_per_population_base, num_sample_voxel_per_region=1,
-                               num_neurons_per_voxel=300)
+                               num_neurons_per_voxel=1000)
 
     sample_number = sample_idx.shape[0]
     print("sample_num:", sample_number)
@@ -78,8 +115,8 @@ def run_simulation(ip, block_path, write_path):
     sample_idx = torch.from_numpy(sample_idx).cuda()[:, 0]
     block_model.set_samples(sample_idx)
 
-    Spike = np.zeros((10, 800, sample_number), dtype=np.uint8)
-    for j in range(10):
+    Spike = np.zeros((100, 800, sample_number), dtype=np.uint8)
+    for j in range(100):
         temp_spike = []
         for return_info in block_model.run(8000, freqs=False, vmean=False, sample_for_show=True):
             spike, vi = return_info
@@ -90,6 +127,7 @@ def run_simulation(ip, block_path, write_path):
         temp_spike = temp_spike.sum(axis=1)
         Spike[j] = torch_2_numpy(temp_spike)
     np.save(os.path.join(write_path, "spike.npy"), Spike)
+    block_model.shutdown()
     print("Done")
 
 if __name__ == '__main__':
@@ -97,5 +135,6 @@ if __name__ == '__main__':
     parser.add_argument("--ip", type=str, default="11.5.4.2:50051")
     parser.add_argument("--block_path", type=str, default="blokc_path/single")
     parser.add_argument("--write_path", type=str, default="write_path")
+    parser.add_argument("--idx", type=str, default="0")
     args = parser.parse_args()
-    run_simulation(args.ip, args.block_path, args.write_path)
+    run_simulation(args.ip, args.block_path, args.write_path, int(args.idx))

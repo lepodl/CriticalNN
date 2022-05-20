@@ -116,7 +116,7 @@ def fit_powerlaw(data):
 
     """
     x_min, x_max = data.min(), data.max()
-    fit = powerlaw.Fit(data, xmin=x_min, xmax=x_max)
+    fit = powerlaw.Fit(data, xmin=x_min, xmax=x_max, discrete=True)
     return fit.alpha, fit.D
 
 

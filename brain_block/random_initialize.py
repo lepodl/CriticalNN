@@ -167,6 +167,89 @@ def get_k_idx(max_k, num, except_idx, destination, orign):  #
     return k_idx
 
 
+def connect_for_single_sparse_block_with_degee_distribution(block_idx, k, extern_input_rate, extern_input_k_sizes, degree=int(100), init_min=0, init_max=1, s = 0, e = -1, degree_distribution="normal", **kwargs):
+    """
+    Generate a single block but with degree distribution not the same degree
+    Returns:
+
+    """
+    if e == -1:
+        e = k
+    assert 0 <= s <= e <= k
+    if degree_distribution == "normal":
+        sigma = kwargs.get("sigma", 5)
+        minum_degree = kwargs.get("minum_degree", 10)
+        degree = np.random.normal(loc=degree, scale=sigma, size=(e-s))
+        degree = np.where(degree>minum_degree, degree, minum_degree)
+    else:
+        raise NotImplementedError
+    _extern_input_k_sizes = np.array(extern_input_k_sizes, dtype=np.int64)
+    degree = degree.astype(np.int64)
+    print("degree max and min", degree.max(), degree.min())
+    if isinstance(extern_input_rate, np.ndarray):
+        extern_input_rate = np.add.accumulate(extern_input_rate)
+        extern_input_idx = None
+    else:
+        extern_input_idx = extern_input_rate.coords[0, :]
+        extern_input_rate = np.add.accumulate(extern_input_rate.data)
+
+    assert np.abs(1 - extern_input_rate[-1]) < 1e-4, f"{s}-{e}, {np.abs(1 - extern_input_rate[-1])}"
+    extern_input_rate = extern_input_rate[:-1]
+    degree_max = (_extern_input_k_sizes / extern_input_rate).astype(np.int64)
+    degree_max = np.min(degree_max)
+    degree = np.where(degree < degree_max-5, degree, degree_max-5)
+
+    connect_weight = np.random.rand(degree.sum(), 2).astype(np.float32) * (init_max - init_min) + init_min
+
+    # output_neuron_idx = np.broadcast_to(np.arange(s, e, dtype=np.uint32)[:, None], (e - s, degree))
+
+    output_neuron_idx = np.zeros(degree.sum(), dtype=np.uint32)
+    output_neuron_idx[np.cumsum(degree)[:-1]] = 1
+    output_neuron_idx = np.cumsum(output_neuron_idx) + s
+
+    if s < e:
+        @jit(nogil=True, nopython=True)
+        def _run(i):
+            input_channel_offset = np.zeros(degree[i-s], dtype=np.uint8)
+
+            r = np.random.rand(degree[i-s])
+            input_block_idx = np.searchsorted(extern_input_rate, r, 'right').astype(np.int16)
+            if extern_input_idx is not None:
+                input_block_idx = extern_input_idx[input_block_idx]
+            input_channel_offset[input_block_idx % 2 == 0] = 0
+            input_channel_offset[input_block_idx % 2 == 1] = 2
+
+            input_neuron_idx = np.zeros(degree[i-s], dtype=np.uint32)
+            for _idx in np.unique(input_block_idx):
+                extern_incomming_idx = (input_block_idx == _idx).nonzero()[0]
+                if _idx != block_idx:
+                    extern_outcomming_idx = get_k_idx(_extern_input_k_sizes[_idx], extern_incomming_idx.shape[0],
+                                                      -1, block_idx, _idx)
+                else:
+                    extern_outcomming_idx = get_k_idx(_extern_input_k_sizes[_idx], extern_incomming_idx.shape[0], i,
+                                                      block_idx, _idx)
+                input_neuron_idx[extern_incomming_idx] = extern_outcomming_idx
+
+            input_block_idx -= block_idx
+            return input_block_idx, input_neuron_idx, input_channel_offset
+
+        time1 = time.time()
+        with Thpool() as p:
+            input_block_idx, input_neuron_idx, input_channel_offset = tuple(zip(*p.map(_run, range(s, e))))
+        time2 = time.time()
+        print("done", e - s, time2 - time1)
+        input_block_idx = np.concatenate(input_block_idx)
+        input_neuron_idx = np.concatenate(input_neuron_idx)
+        input_channel_offset = np.concatenate(input_channel_offset)
+    else:
+        input_block_idx = np.zeros([0], dtype=np.int16)
+        input_neuron_idx = np.zeros([0], dtype=np.uint32)
+        input_channel_offset = np.zeros([0], dtype=np.uint8)
+    output_neuron_idx = output_neuron_idx.reshape([-1])
+    connect_weight = connect_weight.reshape([-1, 2])
+    return output_neuron_idx, input_block_idx, input_neuron_idx, input_channel_offset, connect_weight
+
+
 def connect_for_single_sparse_block(block_idx, k, extern_input_rate, extern_input_k_sizes, degree=int(1e3), init_min=0, init_max=1, s = 0, e = -1, split_EI=False):
     # extern_input_rate only works for E neurons.
 
@@ -370,8 +453,7 @@ def _init(_block_connect_prob,
 
     np.random.seed()
 
-
-def connect_for_multi_sparse_block(block_connect_prob, block_node_init_kwards=None, E_number=None, I_number=None, degree=int(1e3), init_min=0, init_max=1, perfix=None, dtype="single", split_EI=False):
+def connect_for_multi_sparse_block(block_connect_prob, block_node_init_kwards=None, E_number=None, I_number=None, degree=int(1e3), init_min=0, init_max=1, perfix=None, dtype="single", split_EI=False, degree_distribution=None, **kwargs):
     if isinstance(block_connect_prob, torch.Tensor):
         block_connect_prob = block_connect_prob.numpy()
     assert len(block_connect_prob.shape) == 2 and \
@@ -423,16 +505,28 @@ def connect_for_multi_sparse_block(block_connect_prob, block_node_init_kwards=No
                 step = int(1e6)
                 for _s in range(s, e, step):
                     _e = min(_s+step, e)
-                    output_neuron_idx, input_block_idx, input_neuron_idx, input_neuron_offset, connect_weight =\
-                        connect_for_single_sparse_block(i, bases[i+1] - bases[i],
-                                                          prob,
-                                                          s=_s,
-                                                          e=_e,
-                                                          extern_input_k_sizes=extern_input_k_sizes,
-                                                          degree=degree if not isinstance(degree, np.ndarray) else degree[i],
-                                                          init_min=init_min,
-                                                          init_max=init_max,
-                                                        split_EI=split_EI)
+                    if degree_distribution is None:
+                        output_neuron_idx, input_block_idx, input_neuron_idx, input_neuron_offset, connect_weight =\
+                            connect_for_single_sparse_block(i, bases[i+1] - bases[i],
+                                                              prob,
+                                                              s=_s,
+                                                              e=_e,
+                                                              extern_input_k_sizes=extern_input_k_sizes,
+                                                              degree=degree if not isinstance(degree, np.ndarray) else degree[i],
+                                                              init_min=init_min,
+                                                              init_max=init_max,
+                                                            split_EI=split_EI)
+
+                    else:
+                        output_neuron_idx, input_block_idx, input_neuron_idx, input_neuron_offset, connect_weight = \
+                            connect_for_single_sparse_block_with_degee_distribution(i, bases[i+1] - bases[i],
+                                                              prob,
+                                                              s=_s,
+                                                              e=_e,
+                                                              extern_input_k_sizes=extern_input_k_sizes,
+                                                              degree=degree if not isinstance(degree, np.ndarray) else degree[i],
+                                                              init_min=init_min,
+                                                              init_max=init_max, degree_distribution=degree_distribution, **kwargs)
 
                     output_neuron_idx = output_neuron_idx.astype(np.int64)
                     input_neuron_idx = input_neuron_idx.astype(np.int64)
