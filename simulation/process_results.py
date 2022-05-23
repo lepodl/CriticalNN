@@ -18,17 +18,18 @@ def total_avalanches(spike, threshold=1):
 
 
 def grid_search_process():
-    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_d500_specific_range"
-    ampa_contribution = np.linspace(0.4, 1., num=100, endpoint=True)
-    gabaA_contribution = np.linspace(0.2, 0.8, num=100, endpoint=True)
+    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_d300_specific_range_0to1"
+    num = 50
+    ampa_contribution = np.linspace(0., 1., num=num, endpoint=True)
+    gabaA_contribution = np.linspace(0., 1., num=num, endpoint=True)
     contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape((-1, 2))
     total = contribution.shape[0]
-    mean_fr = np.empty((100,100)).reshape(-1)
-    pcc = np.empty((100, 100)).reshape(-1)
-    cc = np.empty((100, 100)).reshape(-1)
-    ks = np.empty((100, 100)).reshape(-1)
-    exponent = np.empty((100, 100)).reshape(-1)
-    cv = np.empty((100, 100)).reshape(-1)
+    mean_fr = np.empty((num,num)).reshape(-1)
+    pcc = np.empty((num, num)).reshape(-1)
+    cc = np.empty((num, num)).reshape(-1)
+    ks = np.empty((num, num)).reshape(-1)
+    exponent = np.empty((num, num)).reshape(-1)
+    cv = np.empty((num, num)).reshape(-1)
     for i in range(total):
         path = os.path.join(results_dir, f"log_{i}.npy")
         log = np.load(path)
@@ -44,16 +45,16 @@ def grid_search_process():
             alpha, D = fit_powerlaw(aval_size)
         exponent[i] = alpha
         ks[i] = D
-    mean_fr = mean_fr.reshape((100, 100))
-    pcc = pcc.reshape((100, 100))
-    cc = cc.reshape((100, 100))
-    ks = ks.reshape((100, 100))
-    exponent = exponent.reshape((100, 100))
-    cv = cv.reshape((100, 100))
-    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range2.npz"), mean_fr=mean_fr,
+    mean_fr = mean_fr.reshape((num, num))
+    pcc = pcc.reshape((num, num))
+    cc = cc.reshape((num, num))
+    ks = ks.reshape((num, num))
+    exponent = exponent.reshape((num, num))
+    cv = cv.reshape((num, num))
+    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d300_specific_range_0to1.npz"), mean_fr=mean_fr,
              pcc=pcc, cc=cc, ks=ks, exponent=exponent, cv=cv, ampa_contribution=ampa_contribution,
              gabaA_contribution=gabaA_contribution)
-    savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range2.mat"),
+    savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d300_specific_range_0to1.mat"),
             mdict={"mean_fr": mean_fr, "pcc": pcc, "cc": cc, "cv": cv, 'ampa_contribution':ampa_contribution, 'gabaA_contribution':gabaA_contribution})  # "ks": ks, "exponent": exponent,
     print("Done!!")
 
@@ -118,6 +119,6 @@ def big_block_simulation():
 
 
 if __name__ == '__main__':
-    # grid_search_process()
-    size_influence()
+    grid_search_process()
+    # size_influence()
     # big_block_simulation()

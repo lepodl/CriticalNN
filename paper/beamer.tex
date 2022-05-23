@@ -168,25 +168,117 @@
 \section{Our Results/Contribution}
 
 \subsection{Main Results}
+\begin{frame}{Biological plausible neuronal network}
+	Consider a balanced E-I network with $ N $ neurons, in which $ 80\% $  are excitatory neurons and the others inhibitory ones. Each neuron is equipped with a biological plausible neuronal model, leaky integrate and fire model, 
+	\begin{equation*}
+		C \dfrac{dV}{dt} = -g_{l}(V - V_{l}) + I_{syn} + I_{ext},
+	\end{equation*}
+	and the conductance-based synaptical filter
+	\begin{equation*}
+		\begin{aligned}
+			&I_{syn}(t) = \sum_{u} g_{u} S_{u}(t)(V_{rev, u} - V)\\
+			&S_{i, u}(t) = \dfrac{1}{\tau_{u}}e^{-t /\ \tau_{u}} \ast \sum_{n, j \in \partial ^{i}} w_{j} \delta \left(t - t_{j}^{n}\right)\\
+			&u=\{AMPA, NMDA, GABA_{A}, GABA_{B}\}.
+		\end{aligned}
+	\end{equation*}
+\end{frame}
+
+\begin{frame}{Balance condition}
+	Under the given network conditions and default neuron parameters, we need to seek for a group of appropriate parameters ($ g_{u} $) to make the network self-sustaining in a stable firing state.
+	
+	\par 
+	we can roughly estimate a gruop of parameter by adopting the first order diffusion approximation.
+	\begin{equation*}
+		\dfrac{V_{th} - V_{reset}}{\sum_{u} \langle g_{u}S_{u}(V_u - V) \rangle - \langle g_{l}(V - V_{l})\rangle} = \dfrac{1 }{r_{\text{equilibrium}}},
+	\end{equation*}	
+	and then we can dervie that
+	\begin{equation*}
+		\left\{
+		\begin{aligned}
+			&34 g_{AMPA} + 250 g_{NMDA} = 1 \\
+			&2 g_{gaba_{A}} + 36 g_{GABA_{B}} = 1\\
+		\end{aligned}
+		\right .
+	\end{equation*}
+	\par 
+	For convenience, we denote the first term in the two equations as $AMPA$ Contribution and $ GABA_{A} $ Contribution respectively.
+	
+\end{frame}
+
+\begin{frame}{Default Paramters}
+	\begin{table}
+		\centering
+		\begin{tabular}{lll}
+			Symbol & Description & Value\\
+			\hline
+			$N$ & Total number of neurons & $2000$\\
+			$N_{E}$ & Total number of excitatory neurons & $600$ \\
+			$N_{I}$ & Total number of inhibitory neurons & $400$ \\
+			$K_{in}$ &  Mean of in-degrees & $400$ \\
+			$\tau_{ref}$ & Refractory period & $5ms$ \\
+			$tau_{u}$ & decay time of receptors & $(8, 40, 10, 50)$ \\
+			$V_{rev, u}$ & reverse voltage & $(0, 0, -75, -100))$ \\
+		\end{tabular}
+		\caption{Default values of model parameters used in numerical simulations}
+		\label{tab:model_tabel}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Rich dynamics in parameter submainfold}
+	\begin{columns}
+		\column{0.49\linewidth}
+		We find rich dynamics in this small balanced E-I network.
+		\begin{itemize}
+			\item Obvious transition in the fire rate.
+			\item CV is larger than 1, and multi stratification.
+			\item Coherence coefficient reflects the spike coherence.
+			\item Critical dynamics occurs in the stratification line paramete space.
+		\end{itemize}
+		\column{0.55\linewidth}
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.95\linewidth]{fig/2d_heatmap}
+		\end{figure}
+	\end{columns}
+\end{frame}
+
+\begin{frame}{avalanches pehenomena}
+	Mainly due to E-I delay feedback$\ldots$
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.9\linewidth]{fig/raster}
+		\caption{raster plot of slow dynamics}
+		\label{raster plot}
+	\end{figure}
+\end{frame}
+	
+\begin{frame}{avalanches pehenomena}
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.9\linewidth]{fig/avalanches_distribution}
+		\caption{avalanches pehenomena}
+	\end{figure}
+	The slope of best fit powerlaw distribution for avalanche size is $ -1.6 $ and avalanche duration is $ -1.8 $
+\end{frame}
 
 \begin{frame}{Criticality in large-scale network}
 	Fit to function $ s\cdot tanh(ax+by+c) + t $
 	\begin{itemize}
 		\item in the small blcok, slop is $1.6$
-		\item in the large-scale block, slop is $1.4$
+		\item in the large-scale block, slop is $1.6$
 	\end{itemize}
 \begin{figure}[htbp]
 	\centering
 	\begin{minipage}{0.49\linewidth}
 		\centering
-		\includegraphics[width=0.9\linewidth]{../notebook/small_block_dense_grid_pcc}
+		\includegraphics[width=0.85\linewidth]{fig/small_block_dense_grid_pcc}
 		\caption{size=2k}
 		\label{small_block}
 	\end{minipage}
 	%\qquad
 	\begin{minipage}{0.49\linewidth}
 		\centering
-		\includegraphics[width=0.9\linewidth]{../notebook/100m_block_sparse_point_pcc}
+		\includegraphics[width=0.85\linewidth]{fig/100m_block_sparse_point_pcc}
 		\caption{size=100m}
 		\label{big_block}
 	\end{minipage}
@@ -194,7 +286,27 @@
 \end{frame}
 
 \begin{frame}{Criticality in large-scale network}
+		\begin{figure}[htbp]
+		\centering
+		\begin{minipage}{0.49\linewidth}
+			\centering
+			\includegraphics[width=0.9\linewidth]{fig/size_influence}
+			\caption{pcc with respect to different sizes}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.49\linewidth}
+			\centering
+			\includegraphics[width=0.9\linewidth]{fig/multi_size_avalanches}
+			\caption{avalanches distribution}
+		\end{minipage}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Criticality in large-scale network}
 	Some simulation case from a fixed parameter of critical space.
+	\begin{itemize}
+		\item The avalanche size increases with the size of the simulation.
+	\end{itemize}
 	\begin{figure}[htbp]
 		\centering
 		\begin{minipage}{0.49\linewidth}
@@ -213,7 +325,30 @@
 	\end{figure}
 \end{frame}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{Dependence on connection density}
+	grid search on network of 2000 neurons with 300 in-connections. x and y range is $ [0, 1] $, each $ 50 $ points.
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.85\linewidth]{fig/degree_300}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Dependence on connection density}
+	grid search on network of 2000 neurons with 500 in-connections.
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.85\linewidth]{fig/degree_influence_3d}
+	\end{figure}
+	As we can see, the plane is much more smooth than its in degree=$ 100 $ and the one-dimensional linear submanifold disappears.
+\end{frame}
+
+\begin{frame}{Dependence on connection density}
+	If all case fit to function $ s\cdot tanh(ax+by+c) + t $. we can find that its slope is smaller with the degree increasing.
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.85\linewidth]{fig/fit_surface}
+	\end{figure}
+	
 \end{frame}
 
 

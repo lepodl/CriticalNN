@@ -8,7 +8,7 @@ from mpi4py import MPI
 from brain_block.random_initialize import connect_for_multi_sparse_block, merge_dti_distributation_block
 
 
-def make_small_block(write_path, initial_parameter=(0.0115, 0.0020, 0.2517, 0.0111)):
+def make_small_block(write_path, initial_parameter=(0.00495148, 0.0009899, 0.08417509, 0.00458287)):
     prob = torch.tensor([[1.]])
     tau_ui = (8, 40, 10, 50)
     if os.path.exists(os.path.join(write_path, 'single', 'block_0.npz')):
@@ -18,7 +18,7 @@ def make_small_block(write_path, initial_parameter=(0.0115, 0.0020, 0.2517, 0.01
                                           'g_ui': initial_parameter,
                                           "V_reset": -65,
                                           'tao_ui': tau_ui},
-                                   E_number=int(1.6e3), I_number=int(4e2), degree=100, init_min=0,
+                                   E_number=int(1.6e3), I_number=int(4e2), degree=300, init_min=0,
                                    init_max=1, perfix=write_path)
     print("Done")
 
@@ -94,6 +94,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate block")
     parser.add_argument("--write_path", type=str, default="../data/degree_distribution_d500")
     args = parser.parse_args()
-    # make_small_block(args.write_path)
-    make_multi_size_block(args.write_path)
+    make_small_block(args.write_path)
+    # make_multi_size_block(args.write_path)
     # make_degree_distribution_block(args.write_path)
