@@ -873,5 +873,6 @@ notebook/**.pdf
 notebook/**.eps
 notebook/**.npy
 paper/*
-!paper/fig2.py
+!paper/fig
+!paper/fig1.ai
 
