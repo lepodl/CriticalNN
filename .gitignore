@@ -872,7 +872,9 @@ data/*
 notebook/**.pdf
 notebook/**.eps
 notebook/**.npy
+.idea/*
 paper/*
 !paper/fig
 !paper/fig1.ai
+notebook/**/single/block_0.npz
 

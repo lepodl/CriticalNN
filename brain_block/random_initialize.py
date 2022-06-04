@@ -97,7 +97,7 @@ def generate_block_node_property(E_number=int(8e5),
                             V_reset = -65,
                             g_ui = (5/275, 5/4000, 3/30, 3/730),
                             V_ui = (0, 0, -70, -100),
-                            tao_ui = (2, 40, 10, 50),
+                            tao_ui = (8, 40, 10, 50),
                             s = 0, e = -1):
 
     # each node contain such property:
@@ -113,8 +113,8 @@ def generate_block_node_property(E_number=int(8e5),
 
     property = np.zeros([e - s, 22], dtype=np.float32)
     E_thresh = E_number - s if E_number > s else 0
-    property[:E_thresh, 0] = 0.003
-    property[E_thresh:, 0] = 0.003
+    property[:E_thresh, 0] = 0.0003
+    property[E_thresh:, 0] = 0.0003
 
     property[:, 1] = 0
 

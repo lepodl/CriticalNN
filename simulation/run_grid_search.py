@@ -15,7 +15,7 @@ def run_simulation(block_path, res_path):
     #       34 * ampa + 250 * nmda = 1
     #       2 * gabaA + 36 * gabaB = 1
     # and for d500 \math
-    #       172 * ampa + 500 * nmda = 1
+    #       172 * ampa + 600 * nmda = 1
     #       10 * gabaA + 180 * gabaB = 1
     # and for d300 \math
     #       102 * ampa + 500 * nmda = 1
@@ -38,7 +38,7 @@ def run_simulation(block_path, res_path):
     rank = comm.Get_rank()
     size = comm.Get_size()
     for i in range(rank, total, size):
-        property, w_uij = connect_for_block(os.path.join(block_path, 'd300', 'single'))
+        property, w_uij = connect_for_block(os.path.join(block_path, 'd500'))
         property[:, (10, 11, 12, 13)] = torch.from_numpy(para[i])
         property = property.cuda()
         w_uij = w_uij.cuda()
@@ -50,7 +50,7 @@ def run_simulation(block_path, res_path):
 
         # run
         log = []
-        for time in range(30000):
+        for time in range(40000):
             B.run(noise_rate=0.0003, isolated=False)
             if time >= 10000:
                 log.append(B.active.data.cpu().numpy())

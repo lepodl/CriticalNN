@@ -15,6 +15,7 @@ def load_if_exist(func, *args, **kwargs):
         np.save(path, out)
     return out
 
+
 def torch_2_numpy(u, is_cuda=True):
     assert isinstance(u, torch.Tensor)
     if is_cuda:
@@ -22,8 +23,9 @@ def torch_2_numpy(u, is_cuda=True):
     else:
         return u.numpy()
 
+
 def sample_in_voxel_splitEI(aal_region, neurons_per_population_base, num_sample_voxel_per_region=1,
-                                       num_neurons_per_voxel=300):
+                            num_neurons_per_voxel=300):
     base = neurons_per_population_base
     subblk_base = np.arange(len(aal_region)) * 2
     uni_region = np.unique(aal_region)
@@ -57,27 +59,28 @@ def sample_in_voxel_splitEI(aal_region, neurons_per_population_base, num_sample_
 
 def run_simulation(ip, block_path, write_path, idx=0):
     # defaulat critical parameter
-    # 0.0115, 0.0020, 0.2517, 0.0111 subcritical parameter
-    ampa_contribution = np.linspace(0.5, 1, num=100, endpoint=True)
-    gabaA_contribution = np.linspace(0., 0.5, num=100, endpoint=True)
-    contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape((-1, 2))
+    # 0.0115, 0.0020, 0.2517, 0.0111 subcritical parameter for d100
+    ampa_contribution = np.linspace(0.5, 1., num=50, endpoint=True)
+    gabaA_contribution = np.linspace(0., 0.5, num=50, endpoint=True)
+    contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape(
+        (-1, 2))
     ampa_contribution = contribution[:, 0]
     gabaA_contribution = contribution[:, 1]
-    ampa = ampa_contribution / 34
-    nmda = (1 - ampa_contribution) / 250
-    gabaA = gabaA_contribution / 2
-    gabaB = (1 - gabaA_contribution) / 36
-    para = np.stack([ampa, nmda, gabaA, gabaB], axis=1)  # (1000, 4)
-    sample_idx = np.arange(5, 100, 10, dtype=np.int8)
+    ampa = ampa_contribution / 102
+    nmda = (1 - ampa_contribution) / 500
+    gabaA = gabaA_contribution / 6
+    gabaB = (1 - gabaA_contribution) / 108
+    para = np.stack([ampa, nmda, gabaA, gabaB], axis=1)
+    sample_idx = np.arange(5, 50, 10, dtype=np.int8)
     sample_idx = np.stack(np.meshgrid(sample_idx, sample_idx, indexing="ij"), axis=-1).reshape((-1, 2))
     a, b = sample_idx[idx]
-    specific_gui = para[a * 100 + b]
+    specific_gui = para[a * 50 + b]
     os.makedirs(write_path, exist_ok=True)
     v_th = -50
-    aal_region = np.array([0])
+    aal_region = np.arange(90)
     block_model = block_gpu(ip, block_path, 0.1,
-                                route_path=None,
-                                force_rebase=False, cortical_size=1)
+                            route_path=None,
+                            force_rebase=False, cortical_size=1)
 
     total_neurons = int(block_model.total_neurons)
     neurons_per_population = block_model.neurons_per_subblk.cpu().numpy()
@@ -107,7 +110,7 @@ def run_simulation(ip, block_path, write_path, idx=0):
     sample_idx = load_if_exist(sample_in_voxel_splitEI, os.path.join(write_path, "sample_idx"),
                                aal_region=aal_region,
                                neurons_per_population_base=neurons_per_population_base, num_sample_voxel_per_region=1,
-                               num_neurons_per_voxel=1000)
+                               num_neurons_per_voxel=300)
 
     sample_number = sample_idx.shape[0]
     print("sample_num:", sample_number)
@@ -115,8 +118,8 @@ def run_simulation(ip, block_path, write_path, idx=0):
     sample_idx = torch.from_numpy(sample_idx).cuda()[:, 0]
     block_model.set_samples(sample_idx)
 
-    Spike = np.zeros((100, 800, sample_number), dtype=np.uint8)
-    for j in range(100):
+    Spike = np.zeros((50, 800, sample_number), dtype=np.uint8)
+    for j in range(50):
         temp_spike = []
         for return_info in block_model.run(8000, freqs=False, vmean=False, sample_for_show=True):
             spike, vi = return_info
@@ -129,6 +132,7 @@ def run_simulation(ip, block_path, write_path, idx=0):
     np.save(os.path.join(write_path, "spike.npy"), Spike)
     block_model.shutdown()
     print("Done")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CUDA Data siulation")

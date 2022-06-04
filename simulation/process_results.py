@@ -1,5 +1,7 @@
 import os
 import glob
+
+import numpy as np
 from scipy.io import savemat
 from analysis.avalanches import *
 from analysis.spike_statistics import *
@@ -18,7 +20,7 @@ def total_avalanches(spike, threshold=1):
 
 
 def grid_search_process():
-    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_d300_specific_range_0to1"
+    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_d500_specific_range_0to1_npoint_50"
     num = 50
     ampa_contribution = np.linspace(0., 1., num=num, endpoint=True)
     gabaA_contribution = np.linspace(0., 1., num=num, endpoint=True)
@@ -35,7 +37,7 @@ def grid_search_process():
         log = np.load(path)
         mean_fr[i] = mean_firing_rate(log)
         cv[i] = coefficient_of_variation(log)
-        pcc[i] = pearson_cc(log, pairs=100)
+        pcc[i] = pearson_cc(log, pairs=200)
         cc[i] = correlation_coefficent(log)
         if mean_fr[i]<=0.002:
             alpha=np.nan
@@ -51,10 +53,10 @@ def grid_search_process():
     ks = ks.reshape((num, num))
     exponent = exponent.reshape((num, num))
     cv = cv.reshape((num, num))
-    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d300_specific_range_0to1.npz"), mean_fr=mean_fr,
+    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range_0to1_npoint_50.npz"), mean_fr=mean_fr,
              pcc=pcc, cc=cc, ks=ks, exponent=exponent, cv=cv, ampa_contribution=ampa_contribution,
              gabaA_contribution=gabaA_contribution)
-    savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d300_specific_range_0to1.mat"),
+    savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range_0to1_npoint_50.mat"),
             mdict={"mean_fr": mean_fr, "pcc": pcc, "cc": cc, "cv": cv, 'ampa_contribution':ampa_contribution, 'gabaA_contribution':gabaA_contribution})  # "ks": ks, "exponent": exponent,
     print("Done!!")
 
@@ -117,8 +119,38 @@ def big_block_simulation():
     savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data/100m_scale_block/", "big_block_simulation.mat"), mdict={"mean_fr":mean_fr, "pcc":pcc, "cc":cc, "ks":ks, "exponent":exponent, "cv":cv})
 
 
+def cuda_grid_search_process():
+    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_on_region_d300_1e7"
+    num = 5
+    total = 25
+    ampa_contribution = np.linspace(0., 1., num=50, endpoint=True)
+    gabaA_contribution = np.linspace(0., 1., num=50, endpoint=True)
+    sample_idx = np.arange(5, 50, 5, dtype=np.int8)
+    ampa_contribution = ampa_contribution[sample_idx]
+    gabaA_contribution = gabaA_contribution[sample_idx]
+    mean_fr = np.empty((25, 90))
+    pcc = np.empty((25, 90))
+    for i in range(total):
+        path = os.path.join(os.path.join(results_dir, f"grid_{i}"), f"spike.npy")
+        log = np.load(path)
+        log = log.reshape((-1, log.shape[-1]))
+        log = log[-5000:]
+        for j in range(90):
+            sub_log = log[:, j*300:(j+1)*300]
+            mean_fr[i, j] = mean_firing_rate(sub_log)
+            pcc[i, j] = pearson_cc(sub_log, pairs=200)
+
+    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data/", "grid_search_on_region_d300_1e7.npz"), mean_fr=mean_fr,
+             pcc=pcc, ampa_contribution=ampa_contribution,
+             gabaA_contribution=gabaA_contribution)
+    # savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data/", "grid_search_on_region_d300_1e7.mat"),
+    #         mdict={"mean_fr": mean_fr, "pcc": pcc, 'ampa_contribution':ampa_contribution, 'gabaA_contribution':gabaA_contribution})  # "ks": ks, "exponent": exponent,
+    print("Done!!")
+
+
 
 if __name__ == '__main__':
-    grid_search_process()
+    # grid_search_process()
     # size_influence()
     # big_block_simulation()
+    cuda_grid_search_process()
