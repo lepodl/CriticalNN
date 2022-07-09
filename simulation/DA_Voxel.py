@@ -170,56 +170,61 @@ class DA_Rest_Whole_Brain(DA_MODEL):
 
     @staticmethod
     def random_walk_range(voxels, up_times, low_times):
-        if real_parameter.ndim == 2:
-            temp_up = np.tile(up_times, (voxels, 1))
-            temp_low = np.tile(low_times, (voxels, 1))
-            return temp_up.reshape((voxels, -1)), temp_low.reshape((voxels, -1))
-        else:
-            raise NotImplementedError("real_parameter.ndim=1 is waiting to complete")
+        temp_up = np.tile(up_times, (voxels, 1))
+        temp_low = np.tile(low_times, (voxels, 1))
+        return temp_up.reshape((voxels, -1)), temp_low.reshape((voxels, -1))
 
     def update(self, e_rate, i_rate):
-        ampa = e_rate / 172
-        nmda = (1 - e_rate) / 600
-        gabaA = i_rate / 10
-        gabaB = (1 - i_rate) / 180
-        para_base = torch.tensor([0.02675, 0.004, 0.5034, 0.02775], dtype=torch.float32)
+        ampa = e_rate / 102
+        ampa = torch.repeat_interleave(ampa, 2)
+        nmda = (1 - e_rate) / 500
+        nmda = torch.repeat_interleave(nmda, 2)
+        gabaA = i_rate / 6
+        gabaA = torch.repeat_interleave(gabaA, 2)
+        gabaB = (1 - i_rate) / 108
+        gabaB = torch.repeat_interleave(gabaB, 2)
+        # para_base = torch.tensor([0.02675, 0.004, 0.5034, 0.02775], dtype=torch.float32)
         population_info = np.stack(np.meshgrid(self.populations_id, np.array([10]), indexing="ij"),
                                    axis=-1).reshape((-1, 2))
         population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
-        ampa = torch.repeat_interleave(ampa, 2)
-        self.block.mul_property_by_subblk(population_info, ampa.reshape(-1))
+        alpha = torch.ones(self.num_populations, device="cuda:0") * ampa * 1e8
+        beta = torch.ones(self.num_populations, device="cuda:0") * 1e8
+        self.block.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
 
         population_info = np.stack(np.meshgrid(self.populations_id, np.array([11]), indexing="ij"),
                                    axis=-1).reshape((-1, 2))
         population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
-        nmda = torch.repeat_interleave(nmda, 2)
-        self.block.mul_property_by_subblk(population_info, nmda.reshape(-1))
+        alpha = torch.ones(self.num_populations, device="cuda:0") * nmda * 1e8
+        beta = torch.ones(self.num_populations, device="cuda:0") * 1e8
+        self.block.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
 
         population_info = np.stack(np.meshgrid(self.populations_id, np.array([12]), indexing="ij"),
                                    axis=-1).reshape((-1, 2))
         population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
-        gabaA = torch.repeat_interleave(gabaA, 2)
-        self.block.mul_property_by_subblk(population_info, gabaA.reshape(-1))
+        alpha = torch.ones(self.num_populations, device="cuda:0") * gabaA * 1e8
+        beta = torch.ones(self.num_populations, device="cuda:0") * 1e8
+        self.block.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
 
         population_info = np.stack(np.meshgrid(self.populations_id, np.array([13]), indexing="ij"),
                                    axis=-1).reshape((-1, 2))
         population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
-        gabaB = torch.repeat_interleave(gabaB, 2)
-        self.block.mul_property_by_subblk(population_info, gabaB.reshape(-1))
+        alpha = torch.ones(self.num_populations, device="cuda:0") * gabaB * 1e8
+        beta = torch.ones(self.num_populations, device="cuda:0") * 1e8
+        self.block.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
 
     def initial_model(self, para_ind, up_times=3, low_times=2):
         start = time.time()
         self.hp_num = 2
-        for idx in np.array([10, 11, 12, 13]):
-            population_info = np.stack(np.meshgrid(self.populations_id, idx, indexing="ij"),
-                                       axis=-1).reshape((-1, 2))
-            population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
-            gamma = torch.ones(self.num_populations, device="cuda:0") * 5.
-            self.block.gamma_property_by_subblk(population_info, gamma, gamma, debug=False)
+        # for idx in np.array([10, 11, 12, 13]):
+        #     population_info = np.stack(np.meshgrid(self.populations_id, idx, indexing="ij"),
+        #                                axis=-1).reshape((-1, 2))
+            # population_info = torch.from_numpy(population_info.astype(np.int64)).cuda()
+            # gamma = torch.ones(self.num_populations, device="cuda:0") * 5.
+            # self.block.gamma_property_by_subblk(population_info, gamma, gamma, debug=False)
 
         # CPU numpy to GPU ndarray
-        # both r_rate and i_rate in the range (0., 0.6)
-        self.up_bound, self.low_bound = self.random_walk_range(self.num_voxel_in_one_ensemble, up_times=np.array([0.6, 0.6]).reshape((2, 1)), low_times=np.array([0., 0.,]).reshape((2, 1)))
+        # both e_rate and i_rate in the range (0., 0.6)
+        self.up_bound, self.low_bound = self.random_walk_range(self.num_voxel_in_one_ensemble, up_times=np.array([0.9, 0.5]).reshape((2, 1)), low_times=np.array([0.7, 0.3]).reshape((2, 1)))
 
         self.hp = np.random.uniform(self.low_bound, self.up_bound, size=(self.ensembles, self.num_voxel_in_one_ensemble, self.hp_num)).astype(np.float32)
 
@@ -322,7 +327,7 @@ class DA_Rest_Whole_Brain(DA_MODEL):
 
         bold_y = h5py.File(bold_path, 'r')['dti_rest_state'][:]
         bold_y = bold_y[:self.num_voxel_in_one_ensemble, :].T
-        bold_y = 0.02 + 0.03 * (bold_y - bold_y.min()) / (bold_y.max() - bold_y.min())
+        bold_y = 0.00 + 0.02 * (bold_y - bold_y.min()) / (bold_y.max() - bold_y.min())
         bold_y = torch.from_numpy(bold_y.astype(np.float32)).cuda()
 
         w_save = [self.torch_2_numpy(w, is_cuda=True)]

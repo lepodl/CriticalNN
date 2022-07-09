@@ -77,7 +77,7 @@ def run_simulation(ip, block_path, write_path, idx=0):
     # specific_gui = para[a * 50 + b]
     # critical_param = np.load('vertical_line_param.npy')
 
-    specific_gui = np.array([2.13037975e-02, 1.39240506e-04, 1.58227848e-01, 1.89873418e-02])
+    specific_gui = np.array([0.01921519, 0.00055696, 0.11708861, 0.02127286])
     os.makedirs(write_path, exist_ok=True)
     v_th = -50
     aal_region = np.array([0])
@@ -108,7 +108,7 @@ def run_simulation(ip, block_path, write_path, idx=0):
             alpha = torch.ones(total_populations, device="cuda:0") * gui[i] * 1e8
             beta = torch.ones(total_populations, device="cuda:0") * 1e8
             block_model.gamma_property_by_subblk(population_info, alpha, beta, debug=False)
-    _update_gui(gui=specific_gui)
+    # _update_gui(gui=specific_gui)
 
     sample_idx = load_if_exist(sample_in_voxel_splitEI, os.path.join(write_path, "sample_idx"),
                                aal_region=aal_region,
@@ -121,19 +121,46 @@ def run_simulation(ip, block_path, write_path, idx=0):
     sample_idx = torch.from_numpy(sample_idx).cuda()[:, 0]
     block_model.set_samples(sample_idx)
 
-    Spike = np.zeros((10, 800, sample_number), dtype=np.uint8)
-    _ = block_model.run(16000, freqs=True, vmean=False, sample_for_show=False)
-    for j in range(10):
-        temp_spike = []
-        for return_info in block_model.run(8000, freqs=False, vmean=False, sample_for_show=True):
-            spike, vi = return_info
-            spike &= (torch.abs(vi - v_th) / 50 < 1e-5)
-            temp_spike.append(spike)
-        temp_spike = torch.stack(temp_spike, dim=0)
-        temp_spike = temp_spike.reshape((800, 10, -1))
-        temp_spike = temp_spike.sum(axis=1)
-        Spike[j] = torch_2_numpy(temp_spike)
-    np.save(os.path.join(write_path, "spike.npy"), Spike)
+    def _index2param(param1, param2, num_grids, index):
+        a1, b1, c1 = param1
+        a2, b2, c2 = param2
+        x, y = num_grids
+        ampa = np.linspace(c1 / a1 / 2, c1 / a1, x)
+        nmda = (c1 - ampa * a1) / b1
+        gabaA = np.linspace(0., c2 / a2 / 2, y)
+        gabaB = (c2 - gabaA * a2) / b2
+        param = np.stack([ampa[index[:, 0]], nmda[index[:, 0]], gabaA[index[:, 1]], gabaB[index[:, 1]]], axis=0)
+        return param
+
+    center = (54, 35)
+    # update parameter for each channel and each neuron
+    for radius in np.arange(1, 15, 1):
+        para_info = np.zeros((total_neurons, 5), dtype=np.int64)
+        para_info[:, 0] = np.arange(total_neurons, dtype=np.int64)
+        para_info[:, 1:] = np.tile(np.array([10, 11, 12, 13]).astype(np.int64), (total_neurons, 1))
+        para_info = torch.from_numpy(para_info).cuda()
+        grid_index = np.random.normal(loc=center, scale=(radius, radius), size=(total_neurons, 2))
+        grid_index = grid_index.astype(np.int64)
+        grid_index = np.where(grid_index>79, 79, grid_index)
+        grid_index = np.where(grid_index<0, 0, grid_index)
+        param = _index2param((1, 5, 0.022), (1, 18, 0.5), (80, 80), grid_index)
+        param = torch.from_numpy(param.astype(np.float32)).cuda()
+        for i, idx in enumerate(np.arange(10, 14)):
+            block_model.update_property(para_info[:, [0, i + 1]], param[i])
+
+        Spike = np.zeros((10, 800, sample_number), dtype=np.uint8)
+        _ = block_model.run(16000, freqs=True, vmean=False, sample_for_show=False)
+        for j in range(10):
+            temp_spike = []
+            for return_info in block_model.run(8000, freqs=False, vmean=False, sample_for_show=True):
+                spike, vi = return_info
+                spike &= (torch.abs(vi - v_th) / 50 < 1e-6)
+                temp_spike.append(spike)
+            temp_spike = torch.stack(temp_spike, dim=0)
+            temp_spike = temp_spike.reshape((800, 10, -1))
+            temp_spike = temp_spike.sum(axis=1)
+            Spike[j] = torch_2_numpy(temp_spike)
+        np.save(os.path.join(write_path, f"spike_radius_{radius}.npy"), Spike)
     block_model.shutdown()
     print("Done")
 

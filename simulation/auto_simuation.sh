@@ -2,7 +2,7 @@
 for nfiles in {0..30}
 do
   echo $nfiles
-  cd /public/home/ssct004t/project/zenglb/CriticalNN/data/multi_size_block/size_49/single
+  cd /public/home/ssct004t/project/zenglb/CriticalNN/data/multi_size_block/size_${nfiles}/single
   fileNum=`ls -l |grep "^-"|wc -l`
   cpus=`expr $fileNum / 4 + 1`
   echo "nodes: $cpus"
@@ -18,11 +18,11 @@ do
   ip=`echo $str_row_ip | tr -cd "[0-9][.][:]"`
   echo $ip
   cd ../
-  client_file="sim.slurm"
+  client_file="cuda_sim.slurm"
   sed -in "2c#SBATCH -J nn_${nfiles}" $client_file
   sed -in "17c \ \ --ip=${ip} \\\\" $client_file  # modify ip
-  sed -in "18c \ \ --block_path=\"\/public\/home\/ssct004t\/project\/zenglb\/CriticalNN\/data\/multi_size_block\/size_49\/single\" \\\\" $client_file  # modify write path
-  sed -in "19c \ \ --write_path=\"\/public\/home\/ssct004t\/project\/zenglb\/CriticalNN\/data\/100m_scale_block\/random_${nfiles}\" \\\\" $client_file  # modify write path
+  sed -in "18c \ \ --block_path=\"\/public\/home\/ssct004t\/project\/zenglb\/CriticalNN\/data\/multi_size_block\/size_${nfiles}\/single\" \\\\" $client_file  # modify write path
+  sed -in "19c \ \ --write_path=\"\/public\/home\/ssct004t\/project\/zenglb\/CriticalNN\/data\/multi_size_results\/from_critical\/size_${nfiles}\" \\\\" $client_file  # modify write path
   sed -in "20c \ \ --idx=${nfiles} \\\\" $client_file  # modify ip
   sbatch $client_file
   sleep 5s

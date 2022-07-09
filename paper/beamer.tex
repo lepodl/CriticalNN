@@ -168,6 +168,59 @@
 \section{Our Results/Contribution}
 
 \subsection{Main Results}
+\begin{frame}{signle neuron dynamics}
+	Orinignal model
+	\begin{equation*}
+		C_{j} \dot{V_{j}}  = - \sum_{A=L, E, I}g_{A}^{j}(V_{j} - E_{A}),
+	\end{equation*}
+	where $\dfrac{g_{E, I}^{j}}{g_{L}^{j}}=\tau_{j}\sum_{m} \sum_{k|t_{m}^{k}<t}\int_{-\infty}^{t}dt^{\prime}a_{\tau_{decay}}\left(t - t^{\prime}\right) \delta(t^{\prime}-t_{m}^{k})$, usually, $a_{\tau_{decay}}(t)=e^{-t / \tau_{decay}} / \tau_{decay}$, but here we use the limit that $\tau_{decay} \rightarrow 0$.
+\end{frame}
+
+\begin{frame}{signle neuron dynamics}
+	\begin{itemize}
+		\item excitatory and inhibitory currents must be fine-tuned to produce an average input below threshold. Specifically, if K and J represent the average number of input connections per neuron and synaptic efficacy, respectively, the difference between excitatory and inhibitory presynaptic inputs must be of the order of $1/KJ$.
+		\item input fluctuations should be large enough to drive firing.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{signle neuron dynamics}
+	We can use the diffusion approximation and approximate the conductances as
+	\begin{equation}
+		\begin{aligned}
+			&\frac{g_{E}}{g_{L}}=a \tau_{L}\left[K r_{E}+\sqrt{K r_{E}} \zeta_{E}\right], \\
+			&\frac{g_{I}}{g_{L}}=a g \tau_{L}\left[\gamma K r_{I}+\sqrt{\gamma K r_{I}} \zeta_{I}\right]
+		\end{aligned}
+	\end{equation}
+\end{frame}
+
+\begin{frame}{signle neuron dynamics}
+	Using the diffusion approximation, OU process, the CV equation can be reduced to
+	\begin{equation}
+		\tau \frac{d V}{d t}=-V+\mu+\sigma(V) \sqrt{\tau} \zeta
+	\end{equation}
+	where
+	\begin{equation}
+		\begin{aligned}
+			\tau^{-1} &=\tau_{L}^{-1}+a K\left(r_{E}+r_{I} g \gamma\right) \\
+			\mu &=\tau\left\{E_{L} / \tau_{L}+a K\left[r_{E} E_{E}+r_{I} g \gamma E_{I}\right]\right\} \\
+			\sigma^{2}(V) &=a^{2} K \tau\left[r_{E}\left(V-E_{E}\right)^{2}+g^{2} \gamma r_{I}\left(V-E_{I}\right)^{2}\right]
+		\end{aligned}
+	\end{equation}
+\end{frame}
+\begin{frame}
+	under the assumption that $Ka >> 1$, we have
+	\begin{equation}\label{scaling_function}
+		\tau \sim \frac{\tau_{0}^{\text {cond }}}{K a}, \quad \mu \sim \mu_{0}^{\text {cond }}, \quad \sigma \sim \sqrt{a} \sigma_{0}^{\text {cond }}
+	\end{equation}
+	we can conclude that:
+	\begin{enumerate}
+		\item $\mu$ is indenpendent of coupling strength, i.e, the synaptic efficacy $a$ and degree $k$.
+		\item Increasing $a$ modifies the drift force and the input noise, which increase proportionally to $a$ and $\sqrt{a}$
+		\item incresing $k$ increases the drift force as $ka$
+	\end{enumerate}
+	In this case, $ka >> 1$, we called it strong coupling. However, if such assumpaiton not holds (weak coupling), the scaling function \eqref{scaling_function} is not ture.
+\end{frame}
+
 \begin{frame}{Biological plausible neuronal network}
 	Consider a balanced E-I network with $ N $ neurons, in which $ 80\% $  are excitatory neurons and the others inhibitory ones. Each neuron is equipped with a biological plausible neuronal model, leaky integrate and fire model, 
 	\begin{equation*}
@@ -195,13 +248,12 @@
 	\begin{equation*}
 		\left\{
 		\begin{aligned}
-			&34 g_{AMPA} + 250 g_{NMDA} = 1 \\
-			&2 g_{gaba_{A}} + 36 g_{GABA_{B}} = 1\\
+			&1 g_{AMPA} + 5 g_{NMDA} = 0.022 \\
+			&1 g_{GABA_{A}} + 18 g_{GABA_{B}} = 0.5\\
 		\end{aligned}
 		\right .
 	\end{equation*}
 	\par 
-	For convenience, we denote the first term in the two equations as $AMPA$ Contribution and $ GABA_{A} $ Contribution respectively.
 	
 \end{frame}
 
@@ -212,12 +264,12 @@
 			Symbol & Description & Value\\
 			\hline
 			$N$ & Total number of neurons & $2000$\\
-			$N_{E}$ & Total number of excitatory neurons & $600$ \\
+			$N_{E}$ & Total number of excitatory neurons & $1600$ \\
 			$N_{I}$ & Total number of inhibitory neurons & $400$ \\
-			$K_{in}$ &  Mean of in-degrees & $400$ \\
+			$K_{in}$ &  Mean of in-degrees & $100$ \\
 			$\tau_{ref}$ & Refractory period & $5ms$ \\
 			$tau_{u}$ & decay time of receptors & $(8, 40, 10, 50)$ \\
-			$V_{rev, u}$ & reverse voltage & $(0, 0, -75, -100))$ \\
+			$V_{rev, u}$ & reverse voltage & $(0, 0, -70, -100))$ \\
 		\end{tabular}
 		\caption{Default values of model parameters used in numerical simulations}
 		\label{tab:model_tabel}
@@ -237,7 +289,7 @@
 		\column{0.55\linewidth}
 		\begin{figure}[htbp]
 			\centering
-			\includegraphics[width=0.95\linewidth]{fig/2d_heatmap}
+			\includegraphics[scale=0.25]{fig/phase_plot}
 		\end{figure}
 	\end{columns}
 \end{frame}
@@ -259,6 +311,61 @@
 		\caption{avalanches pehenomena}
 	\end{figure}
 	The slope of best fit powerlaw distribution for avalanche size is $ -1.6 $ and avalanche duration is $ -1.8 $
+\end{frame}
+
+\begin{frame}{Characteristic in boundary line}
+	if we dive into the characteristices of the network on the boundary line space
+	\begin{figure}[htbp]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{fig/along_critical_ks}
+			\caption{ks distance}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{fig/along_critical_slope}
+			\caption{slope}
+		\end{minipage}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{robust on size}
+	\begin{columns}
+		\column{0.49\linewidth}
+		The corresponding relationship between \textit{coherence coefficient} and \textit{ks distance} is shown in the figure below
+		\centering
+		\includegraphics[width=0.85\linewidth]{fig/cc_vc_ks}
+		\column{0.55\linewidth}
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[scale=0.2]{fig/size_influence_total}
+		\end{figure}
+	\end{columns}
+\end{frame}
+
+\begin{frame}{degree inluence}
+	we perform experiments and summarize the main findings based on shifted exponential in- degree distributions.
+	\centering
+	\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.85\linewidth]{fig/degree_influence}
+	\caption{degree influence}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{parameter heterogeneity}
+	\begin{itemize}
+		\item the raidus is from 1 to 15
+		\item along the boundary line
+	\end{itemize}
+	\centering
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.8\linewidth]{fig/reparameter_all}
+		\caption{parameter heterogeneity} 
+	\end{figure}
 \end{frame}
 
 \begin{frame}{Criticality in large-scale network}
@@ -284,6 +391,8 @@
 	\end{minipage}
 \end{figure}
 \end{frame}
+
+
 
 \begin{frame}{Criticality in large-scale network}
 		\begin{figure}[htbp]

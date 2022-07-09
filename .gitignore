@@ -876,5 +876,6 @@ notebook/**.npy
 paper/*
 !paper/fig
 !paper/fig1.ai
-notebook/**/single/block_0.npz
+!paper/fig_plot.py
+notebook/**/single/*.npz
 

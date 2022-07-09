@@ -181,6 +181,11 @@ def connect_for_single_sparse_block_with_degee_distribution(block_idx, k, extern
         minum_degree = kwargs.get("minum_degree", 10)
         degree = np.random.normal(loc=degree, scale=sigma, size=(e-s))
         degree = np.where(degree>minum_degree, degree, minum_degree)
+    elif degree_distribution == "shifted_exp":
+        sigma = kwargs.get("sigma", 10)
+        minum_degree = kwargs.get("minum_degree", 10)
+        degree = np.random.exponential(scale=sigma, size=(e-s)) + (degree - sigma)
+        degree = np.where(degree > minum_degree, degree, minum_degree)
     else:
         raise NotImplementedError
     _extern_input_k_sizes = np.array(extern_input_k_sizes, dtype=np.int64)

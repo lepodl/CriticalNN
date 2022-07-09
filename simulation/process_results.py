@@ -9,8 +9,8 @@ from analysis.spike_statistics import *
 def total_avalanches(spike, threshold=1):
     aval_size_total = []
     aval_dur_total = []
-    for i in range(80):
-        seed = np.random.randint(low=0, high=1000, size=(100), dtype=np.int32)
+    for i in range(40):
+        seed = np.random.randint(low=0, high=500, size=(100), dtype=np.int32)
         _, aval_size, aval_dur, _ = compute_avalanche(spike[:, seed], threshold)
         aval_size_total.append(aval_size)
         aval_dur_total.append(aval_dur)
@@ -20,12 +20,16 @@ def total_avalanches(spike, threshold=1):
 
 
 def grid_search_process():
-    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_d500_specific_range_0to1_npoint_50"
-    num = 50
-    ampa_contribution = np.linspace(0., 1., num=num, endpoint=True)
-    gabaA_contribution = np.linspace(0., 1., num=num, endpoint=True)
-    contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape((-1, 2))
-    total = contribution.shape[0]
+    results_dir = "/public/home/ssct004t/project/zenglb/CriticalNN/data/grid_search_d100_new_new"
+
+    # ampa_contribution = np.linspace(0., 1., num=num, endpoint=True)
+    # gabaA_contribution = np.linspace(0., 1., num=num, endpoint=True)
+    # contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape((-1, 2))
+    # total = contribution.shape[0]
+    num = 80
+    ampa = np.linspace(0.022 / 2, 0.022 / 1, num)
+    gabaA = np.linspace(0., 0.5 / 2, num)
+    total = num * num
     mean_fr = np.empty((num,num)).reshape(-1)
     pcc = np.empty((num, num)).reshape(-1)
     cc = np.empty((num, num)).reshape(-1)
@@ -37,12 +41,15 @@ def grid_search_process():
         log = np.load(path)
         mean_fr[i] = mean_firing_rate(log)
         cv[i] = coefficient_of_variation(log)
-        pcc[i] = pearson_cc(log, pairs=200)
-        cc[i] = correlation_coefficent(log)
+
         if mean_fr[i]<=0.002:
             alpha=np.nan
             D = np.nan
+            pcc[i] = 0.
+            cc[i] = 0.
         else:
+            pcc[i] = pearson_cc(log, pairs=200)
+            cc[i] = correlation_coefficent(log)
             _, aval_size, _, _ = compute_avalanche(log)
             alpha, D = fit_powerlaw(aval_size)
         exponent[i] = alpha
@@ -53,16 +60,16 @@ def grid_search_process():
     ks = ks.reshape((num, num))
     exponent = exponent.reshape((num, num))
     cv = cv.reshape((num, num))
-    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range_0to1_npoint_50.npz"), mean_fr=mean_fr,
-             pcc=pcc, cc=cc, ks=ks, exponent=exponent, cv=cv, ampa_contribution=ampa_contribution,
-             gabaA_contribution=gabaA_contribution)
-    savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range_0to1_npoint_50.mat"),
-            mdict={"mean_fr": mean_fr, "pcc": pcc, "cc": cc, "cv": cv, 'ampa_contribution':ampa_contribution, 'gabaA_contribution':gabaA_contribution})  # "ks": ks, "exponent": exponent,
+    np.savez(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_new_new.npz"), mean_fr=mean_fr,
+             pcc=pcc, cc=cc, ks=ks, exponent=exponent, cv=cv, ampa=ampa,
+             gabaA=gabaA)
+    # savemat(os.path.join("/public/home/ssct004t/project/zenglb/CriticalNN/data", "grid_search_d500_specific_range_0to1_npoint_50.mat"),
+    #         mdict={"mean_fr": mean_fr, "pcc": pcc, "cc": cc, "cv": cv, 'ampa_contribution':ampa_contribution, 'gabaA_contribution':gabaA_contribution})  # "ks": ks, "exponent": exponent,
     print("Done!!")
 
 
 def size_influence():
-    data_dir = r"/public/home/ssct004t/project/zenglb/CriticalNN/data/multi_size_result/from_critical"
+    data_dir = r"/public/home/ssct004t/project/zenglb/CriticalNN/data/multi_size_results/from_critical"
     total = 50
     mean_fr = np.empty(total)
     pcc = np.empty(total)
@@ -71,6 +78,7 @@ def size_influence():
     exponent = np.empty(total)
     cv = np.empty(total)
     for i in range(total):
+        print(i)
         path = os.path.join(data_dir, f"size_{i}", "spike.npy")
         log = np.load(path)
         log = log.reshape((-1, log.shape[-1]))
@@ -150,7 +158,7 @@ def cuda_grid_search_process():
 
 
 if __name__ == '__main__':
-    # grid_search_process()
+    grid_search_process()
     # size_influence()
     # big_block_simulation()
-    cuda_grid_search_process()
+    # cuda_grid_search_process()

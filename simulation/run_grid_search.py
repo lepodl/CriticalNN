@@ -21,17 +21,29 @@ def run_simulation(block_path, res_path):
     #       102 * ampa + 500 * nmda = 1
     #       6 * gabaA + 108 * gabaB = 1
 
-    ampa_contribution = np.linspace(0., 1., num=50, endpoint=True)
-    gabaA_contribution = np.linspace(0., 1., num=50, endpoint=True)
-    contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape(
-        (-1, 2))
-    ampa_contribution = contribution[:, 0]
-    gabaA_contribution = contribution[:, 1]
-    ampa = ampa_contribution / 102
-    nmda = (1 - ampa_contribution) / 500
-    gabaA = gabaA_contribution / 6
-    gabaB = (1 - gabaA_contribution) / 108
-    para = np.stack([ampa, nmda, gabaA, gabaB], axis=1)
+    # ampa_contribution = np.linspace(0., 1., num=50, endpoint=True)
+    # gabaA_contribution = np.linspace(0., 1., num=50, endpoint=True)
+    # contribution = np.stack(np.meshgrid(ampa_contribution, gabaA_contribution, indexing='ij'), axis=-1).reshape(
+    #     (-1, 2))
+    # ampa_contribution = contribution[:, 0]
+    # gabaA_contribution = contribution[:, 1]
+    # ampa = ampa_contribution / 102
+    # nmda = (1 - ampa_contribution) / 500
+    # gabaA = gabaA_contribution / 6
+    # gabaB = (1 - gabaA_contribution) / 108
+    # para = np.stack([ampa, nmda, gabaA, gabaB], axis=1)
+
+    # new for d100
+    # 92 * ampa + 1856 * nmda = 1.8
+    # 24 * gabaA + 420 * gabaB = 1.1
+
+    x = y = 80
+    ampa = np.linspace(0.022 / 2, 0.022 / 1, x)
+    gabaA = np.linspace(0., 0.5 / 2, y)
+    param = np.stack(np.meshgrid(ampa, gabaA, indexing="ij"), axis=-1).reshape((-1, 2))
+    nmda = (0.022 - param[:, 0] * 1) / 5
+    gabaB = (0.5 - param[:, 1] * 1) / 18
+    para = np.stack([param[:, 0] / 1.2, nmda / 1.1, param[:, 1] / 1.35, gabaB / 1.35], axis=1)
     para = para.astype(np.float32)
     total = para.shape[0]
     comm = MPI.COMM_WORLD
@@ -51,7 +63,7 @@ def run_simulation(block_path, res_path):
         # run
         log = []
         for time in range(40000):
-            B.run(noise_rate=0.0003, isolated=False)
+            B.run(noise_rate=0.0005, isolated=False)
             if time >= 10000:
                 log.append(B.active.data.cpu().numpy())
         log = np.array(log, dtype=np.uint8)[:, 1400:1600]
