@@ -236,6 +236,8 @@
 	\end{equation*}
 \end{frame}
 
+
+
 \begin{frame}{Balance condition}
 	Under the given network conditions and default neuron parameters, we need to seek for a group of appropriate parameters ($ g_{u} $) to make the network self-sustaining in a stable firing state.
 	
@@ -245,14 +247,15 @@
 		\dfrac{V_{th} - V_{reset}}{\sum_{u} \langle g_{u}S_{u}(V_u - V) \rangle - \langle g_{l}(V - V_{l})\rangle} = \dfrac{1 }{r_{\text{equilibrium}}},
 	\end{equation*}	
 	and then we can dervie that
-	\begin{equation*}
+	\begin{equation}
+		\label{eq:param_restriction}
 		\left\{
 		\begin{aligned}
 			&1 g_{AMPA} + 5 g_{NMDA} = 0.022 \\
 			&1 g_{GABA_{A}} + 18 g_{GABA_{B}} = 0.5\\
 		\end{aligned}
 		\right .
-	\end{equation*}
+	\end{equation}
 	\par 
 	
 \end{frame}
@@ -463,16 +466,138 @@
 
 \subsection{Basic Ideas for Proofs/Implementation}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{Synaptic drive}
+	The full model:
+		\begin{equation*}
+		\begin{aligned}
+			&C_{j} \dot{V_{j}}  = - \sum_{A}g_{L, A}^{j}(V_{j} - E_{A}) \\
+			&g_{A}^{j}=c_{A}\sum_{m} \sum_{k|t_{m}^{k}<t}\int_{-\infty}^{t}dt^{\prime}a_{\tau_{decay}}\left(t - t^{\prime}\right) \delta(t^{\prime}-t_{m}^{k}), 
+		\end{aligned}
+		\end{equation*}
+	where $ A= AMPA, NMDA, GABA_{A}, GABA_{B} $.
+	\par 
+	Herein, only the single neuron properties will be considered. We aim to explore the influence of  restricted parameter $ c_{A} $ to the synaptic drive and membrane response.
+
 \end{frame}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{The diffusion approximation}
+	The number of pulses that arrive within the timescales$ \tau_{A} $ will be approximately gaussian distributed. Thus, we can constitute this Ornstein-Uhlenbeck process.
+		\begin{equation}
+		\tau_{A} \frac{d g_{A}}{d t} \simeq g_{A 0}-g_{A}+\sqrt{2} \sigma_{A} \xi_{A}(t)
+	\end{equation}
+	where the gaussian white noise $ \xi_{A} $ has a zero mean and relatively independent.
+	\begin{equation}
+		\left\langle\xi_{A}(t)\right\rangle=0 \quad\left\langle\xi_{A}(t) \xi_{A}\left(t^{\prime}\right)\right\rangle=\tau_{A} \delta\left(t-t^{\prime}\right)
+	\end{equation}
+	The average conductance $ g_{A, 0} $ and the standard deviation $ \sigma_{A} $ are related to the variables $ c_{A}, \tau_{A} $ and $ \mathcal{R} $ through
+	\begin{equation}
+		g_{A 0}=c_{A} \tau_{A} \mathcal{R}_{A}, \quad \sigma_{A}=c_{A}  \sqrt{\frac{\tau_{A}\mathcal{R}_{A}}{2}}
+	\end{equation}
 \end{frame}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{The diffusion approximation}
+	 we sole the above OU equation, then derive:
+	 \begin{equation}
+	 	g_{A}(t) = g_{A}(0)e^{-t/\tau_{A}} + g_{A 0} \left( 1 - e^{-t/\tau_{A}}\right) + \sqrt{2} \sigma_{e} \int_{0}^{t} \dfrac{1}{\tau_{A}} e^{-(t - s) / \tau_{A}} dB_{s}, 
+	 \end{equation}
+ 	and 
+	 \begin{equation}
+	 	g_{A F}(t) \equiv g_{A}(t)-g_{A 0} \simeq \sqrt{2} \sigma_{A} \int_{0}^{t} \dfrac{1}{\tau_{A}} e^{-(t - s) / \tau_{A}} dB_{s}
+	 \end{equation}
+ 	\par 
+ 	\begin{equation}
+ 		g_{A F}(t) \sim \mathcal{N}\left(0, 2 \sigma_{A}^{2} \int_{0}^{t} (\dfrac{1}{\tau_{A}}e^{-(t - s) / \tau_{A}})^{2} dt\right) (\text{Ito isometry}) ,
+ 	\end{equation}
+ 	if $ t \rightarrow \infty $, 
+ 	\begin{equation}
+ 		p_{D}\left(g_{A}\right)=\frac{1}{\sqrt{2 \pi \sigma_{A}^{2}}} \exp \left(-\frac{\left(g_{A}-g_{A 0}\right)^{2}}{2 \sigma_{A}^{2}}\right)
+ 	\end{equation}
+ 	
+\end{frame}
+\begin{frame}{The diffusion approximation}
+	The criterion for validity of the approximation is $ \sigma_{A} / g_{A 0} << 1$ .
+	\par 
+	If we thake consideration of the eq(\ref{eq:param_restriction}) and we can derive the total conductance drive. Thus, using excitation as an example,
+	\begin{equation*}
+		\frac{d g_{e}}{d t} \simeq \dfrac{g_{0}^{(1)}}{\tau_{1}} + \dfrac{g_{0}^{(2)}}{\tau_{2}} - (\dfrac{\tau_{1}+\tau_{2}}{\tau_{1}\tau_{2}})g_{e}+\sqrt{2} (\dfrac{\tau_{1}\sigma_{1}+\tau_{2}\sigma_{1}}{\tau_{1}\tau_{2}}) \xi_{e}(t) , 
+	\end{equation*}
+	similarly, we can conclude that the excitatory conducatance obey the gaussian disritbuion.
 \end{frame}
 
+\begin{frame}{Membrane response}
+	By separating the synaptic conductances into components $ g_{0}^{(i)}, i=1,2,3,4 $, and fluctuating components $ g_{F}^{(i)},i=1, 2, 3, 4 $.
+	\begin{equation}
+		C \frac{d V}{d t}=-g_{0}\left(V-E_{0}\right)-\sum_{i=1}^{4}g_{F}^{(i)}\left(V-E_{i}\right)
+	\end{equation}
+	where
+	\begin{equation}
+		g_{0}=g_{L}+\sum g_{0}^{(i)} \quad \text { and } \quad E_{0}=\frac{1}{g_{0}}\left(g_{L} E_{L}+\sum g_{0}^{(i)} E_{i}\right)
+	\end{equation}
+	effective membrane time constant: $ \tau_{0} = C /g_{0} $
+\end{frame}
+\begin{frame}{Membrane response}
+	the voltage-dependent component of the drive can be expanded around the equilibrium potential $ E_{0} $
+	\begin{equation}
+		g_{F}^{i}\left(V-E_{i}\right)=g_{F}^{i}\left(E_{0}-E_{i}\right)+g_{F}^{i}\left(V-E_{i}\right)
+	\end{equation}
+	\par
+	If we drope the multiplicative noise term, that is
+	\begin{equation}
+		\label{eq: constant_approximation}
+		\left\{
+		\begin{aligned}	
+		&C \frac{d V}{d t} \simeq-g_{0}\left(V-E_{0}\right)+\sum g_{F}^{i}\left(E_{i}-E_{0}\right) \\
+		&\tau_{i} \frac{d g_{F}^{o}}{d t} \simeq g_{F}^{i}+\sqrt{2} \sigma_{i} \xi_{i}(t)
+	\end{aligned}
+	\right .
+	\end{equation}
+	where, $ \xi_{1} $ and $ \xi_{2} $ is totally correlated, $ \xi_{3} $ and $ \xi_{4} $ is totally correlated.
+\end{frame}
+\begin{frame}{Membrane response}
+	Then we can rewrite the eq\ref{eq: constant_approximation} as:
+	\begin{equation}
+		\dfrac{dV}{dt} \simeq -\dfrac{1}{\tau_{0}}\left(V - E_{0}\right) + I_{F}
+	\end{equation}
+	and we have
+	\begin{equation}
+		\begin{aligned}
+			I_{F}(t)  &= V(t)-E_{0} \\
+			 &\simeq \sum \sqrt{2}\left(\frac{\sigma_{i}}{g_{0}}\right) \frac{\left(E_{i}-E_{0}\right)}{\left(\tau_{i}-\tau_{0}\right)} \int_{0}^{\infty} d s\left(e^{-s / \tau_{i}}-e^{-s / \tau_{0}}\right) \xi_{i}(t-s)
+		\end{aligned}
+	\end{equation}
+\end{frame}
 
+\begin{frame}{Membrane response}
+	The distribution predicted for the voltage is the gaussian
+	\begin{equation}
+		p_{0}(V)=\frac{1}{\sqrt{2 \pi \sigma_{V}^{2}}} \exp \left(-\frac{\left(V-E_{0}\right)^{2}}{2 \sigma_{V}^{2}}\right)
+	\end{equation}
+	where, for the case where there are no correlations between excitation and
+	inhibition, the variance is 
+	\begin{equation*}
+	\begin{aligned}
+		\sigma_{V}^{2}&=\sum_{i=1}^{4}\left(\frac{\sigma_{i}}{g_{0}}\right)^{2}\left(E_{i}-E_{0}\right)^{2} \frac{\tau_{i}}{\left(\tau_{i}+\tau_{0}\right)} \\
+		&+ 2\left(\frac{\sigma_{1} \sigma_{2}}{g_{0}^{2}}\right)\left(E_{1}-E_{0}\right)\left(E_{2}-E_{0}\right) \frac{\sqrt{\tau_{1} \tau_{2}}\left(2 \tau_{1} \tau_{2}+\tau_{1} \tau_{0}+\tau_{2} \tau_{0}\right)}{\left(\tau_{1}+\tau_{2}\right)\left(\tau_{1}+\tau_{0}\right)\left(\tau_{2}+\tau_{0}\right)} \\
+		&+ 2\left(\frac{\sigma_{3} \sigma_{4}}{g_{0}^{2}}\right)\left(E_{3}-E_{0}\right)\left(E_{4}-E_{0}\right) \frac{\sqrt{\tau_{3} \tau_{4}}\left(2 \tau_{3} \tau_{4}+\tau_{3} \tau_{0}+\tau_{4} \tau_{0}\right)}{\left(\tau_{3}+\tau_{4}\right)\left(\tau_{3}+\tau_{0}\right)\left(\tau_{4}+\tau_{0}\right)}
+	\end{aligned}
+	\end{equation*}
+\end{frame}
+
+\begin{frame}{Membrane response}
+	Increasing $ GABA_{A} $ modifies the equilibrium value $ E_{0} $, the drift force and the input noise.
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.75\linewidth]{fig/diffusion_theorem}
+		\caption{Effects of GABAA on the friing behavior of isolated conductance-based neuron}
+	\end{figure}
+\end{frame}
+\begin{frame}{input-output correlation}
+		\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.85\linewidth]{fig/correlate}
+		\caption{The relationship between the input and output correlation coefficients for an LIF neuron}
+	\end{figure}
+\end{frame}
 
 \section*{Summary}
 
